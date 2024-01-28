@@ -1,0 +1,69 @@
+# fly.toml app configuration file generated for mon-nz on 2024-01-27T21:08:53+08:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'nezha'
+primary_region = 'hkg'
+kill_signal = 'SIGINT'
+kill_timeout = '5s'
+
+[experimental]
+  auto_rollback = true
+
+[build]
+  dockerfile = 'fly.io.Dockerfile'
+
+[env]
+
+[[mounts]]
+  source = 'nz_data'
+  destination = '/dashboard/data'
+  initial_size = '1'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 80
+  force_https = true
+  processes = ['app']
+
+[[services.ports]]
+    port = 80
+    handlers = ['http']
+
+[[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+  [services.concurrency]
+    type = 'connections'
+    hard_limit = 25
+    soft_limit = 20
+
+[[services.tcp_checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '1s'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 5555
+  processes = ['app']
+
+[[services.ports]]
+    port = 5555
+
+  [services.concurrency]
+    type = 'connections'
+    hard_limit = 25
+    soft_limit = 20
+
+[[services.tcp_checks]]
+    interval = '15s'
+    timeout = '2s'
+    grace_period = '1s'
+
+[[vm]]
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
