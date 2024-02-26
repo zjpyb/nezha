@@ -609,3 +609,24 @@ other = "Ocultar para Invitados"
 
 [Menu]
 other = "Menú"
+
+[NetworkSpiter]
+other = "Red"
+
+[EnableShowInService]
+other = "Mostrar en servicio"
+
+[EnableDDNS]
+other = "Habilitar DDNS"
+
+[DDNSDomain]
+other = "Dominio DDNS"
+
+[Feature]
+other = "Característica"
+
+[Template]
+other = "Plantilla"
+
+[Stat]
+other = "Stat"

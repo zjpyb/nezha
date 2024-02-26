@@ -1,6 +1,7 @@
 package singleton
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -45,6 +46,21 @@ func InitConfigFromPath(path string) {
 	err := Conf.Read(path)
 	if err != nil {
 		panic(err)
+	}
+	ValidateConfig()
+}
+
+// ValidateConfig 验证配置文件有效性
+func ValidateConfig() {
+	// 如果DDNS启用则检查Provider是否存在, 不存在直接退出
+	if Conf.DDNS.Enable {
+		_, err := GetDDNSProviderFromString(Conf.DDNS.Provider)
+		if err != nil {
+			panic(err)
+		}
+		if Conf.DDNS.MaxRetries < 1 || Conf.DDNS.MaxRetries > 10 {
+			panic(fmt.Errorf("DDNS.MaxRetries值域为[1, 10]的整数, 当前为 %d", Conf.DDNS.MaxRetries))
+		}
 	}
 }
 
@@ -99,6 +115,10 @@ func RecordTransferHourlyUsage() {
 func CleanMonitorHistory() {
 	// 清理已被删除的服务器的监控记录与流量记录
 	DB.Unscoped().Delete(&model.MonitorHistory{}, "created_at < ? OR monitor_id NOT IN (SELECT `id` FROM monitors)", time.Now().AddDate(0, 0, -30))
+	// 由于网络监控记录的数据较多，并且前端仅使用了 1 天的数据
+	// 考虑到 sqlite 数据量问题，仅保留一天数据，
+	// server_id = 0 的数据会用于/service页面的可用性展示
+	DB.Unscoped().Delete(&model.MonitorHistory{}, "(created_at < ? AND server_id != 0) OR monitor_id NOT IN (SELECT `id` FROM monitors)", time.Now().AddDate(0, 0, -1))
 	DB.Unscoped().Delete(&model.Transfer{}, "server_id NOT IN (SELECT `id` FROM servers)")
 	// 计算可清理流量记录的时长
 	var allServerKeep time.Time

@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
+	"gorm.io/gorm"
 
 	"github.com/naiba/nezha/model"
 	"github.com/naiba/nezha/pkg/mygin"
@@ -27,11 +28,11 @@ type memberAPI struct {
 func (ma *memberAPI) serve() {
 	mr := ma.r.Group("")
 	mr.Use(mygin.Authorize(mygin.AuthorizeOption{
-		Member:   true,
-		IsPage:   false,
-		Msg:      "访问此接口需要登录",
-		Btn:      "点此登录",
-		Redirect: "/login",
+		MemberOnly: true,
+		IsPage:     false,
+		Msg:        "访问此接口需要登录",
+		Btn:        "点此登录",
+		Redirect:   "/login",
 	}))
 
 	mr.GET("/search-server", ma.searchServer)
@@ -185,7 +186,17 @@ func (ma *memberAPI) delete(c *gin.Context) {
 	var err error
 	switch c.Param("model") {
 	case "server":
-		err = singleton.DB.Unscoped().Delete(&model.Server{}, "id = ?", id).Error
+		err := singleton.DB.Transaction(func(tx *gorm.DB) error {
+			err = singleton.DB.Unscoped().Delete(&model.Server{}, "id = ?", id).Error
+			if err != nil {
+				return err
+			}
+			err = singleton.DB.Unscoped().Delete(&model.MonitorHistory{}, "server_id = ?", id).Error
+			if err != nil {
+				return err
+			}
+			return nil
+		})
 		if err == nil {
 			// 删除服务器
 			singleton.ServerLock.Lock()
@@ -289,6 +300,8 @@ type serverForm struct {
 	Tag          string
 	Note         string
 	HideForGuest string
+	EnableDDNS   string
+	DDNSDomain   string
 }
 
 func (ma *memberAPI) addOrEditServer(c *gin.Context) {
@@ -304,6 +317,8 @@ func (ma *memberAPI) addOrEditServer(c *gin.Context) {
 		s.Tag = sf.Tag
 		s.Note = sf.Note
 		s.HideForGuest = sf.HideForGuest == "on"
+		s.EnableDDNS = sf.EnableDDNS == "on"
+		s.DDNSDomain = sf.DDNSDomain
 		if s.ID == 0 {
 			s.Secret, err = utils.GenerateRandomString(18)
 			if err == nil {
@@ -383,6 +398,7 @@ type monitorForm struct {
 	MaxLatency             float32
 	LatencyNotify          string
 	EnableTriggerTask      string
+	EnableShowInService    string
 	FailTriggerTasksRaw    string
 	RecoverTriggerTasksRaw string
 }
@@ -404,6 +420,7 @@ func (ma *memberAPI) addOrEditMonitor(c *gin.Context) {
 		m.LatencyNotify = mf.LatencyNotify == "on"
 		m.MinLatency = mf.MinLatency
 		m.MaxLatency = mf.MaxLatency
+		m.EnableShowInService = mf.EnableShowInService == "on"
 		m.EnableTriggerTask = mf.EnableTriggerTask == "on"
 		m.RecoverTriggerTasksRaw = mf.RecoverTriggerTasksRaw
 		m.FailTriggerTasksRaw = mf.FailTriggerTasksRaw
@@ -425,6 +442,13 @@ func (ma *memberAPI) addOrEditMonitor(c *gin.Context) {
 				err = singleton.DB.Create(&m).Error
 			} else {
 				err = singleton.DB.Save(&m).Error
+			}
+		}
+		if err == nil {
+			if m.Cover == 0 {
+				err = singleton.DB.Unscoped().Delete(&model.MonitorHistory{}, "monitor_id = ? and server_id in (?)", m.ID, strings.Split(m.SkipServersRaw[1:len(m.SkipServersRaw)-1], ",")).Error
+			} else {
+				err = singleton.DB.Unscoped().Delete(&model.MonitorHistory{}, "monitor_id = ? and server_id not in (?)", m.ID, strings.Split(m.SkipServersRaw[1:len(m.SkipServersRaw)-1], ",")).Error
 			}
 		}
 	}

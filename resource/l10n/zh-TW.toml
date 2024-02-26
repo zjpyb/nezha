@@ -609,3 +609,24 @@ other = "對遊客隱藏"
 
 [Menu]
 other = "菜單"
+
+[NetworkSpiter]
+other = "網絡"
+
+[EnableShowInService]
+other = "在服務中顯示"
+
+[EnableDDNS]
+other = "啟用DDNS"
+
+[DDNSDomain]
+other = "DDNS網域"
+
+[Feature]
+other = "功能"
+
+[Template]
+other = "主題"
+
+[Stat]
+other = "信息"

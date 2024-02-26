@@ -110,6 +110,21 @@ type Config struct {
 
 	v                              *viper.Viper
 	IgnoredIPNotificationServerIDs map[uint64]bool // [ServerID] -> bool(值为true代表当前ServerID在特定服务器列表内）
+	MaxTCPPingValue                int32
+	AvgPingCount                   int
+
+	// 动态域名解析更新
+	DDNS struct {
+		Enable             bool
+		Provider           string
+		AccessID           string
+		AccessSecret       string
+		WebhookURL         string
+		WebhookMethod      string
+		WebhookRequestBody string
+		WebhookHeaders     string
+		MaxRetries         uint32
+	}
 }
 
 // Read 读取配置文件并应用
@@ -143,6 +158,21 @@ func (c *Config) Read(path string) error {
 	}
 	if c.Location == "" {
 		c.Location = "Asia/Shanghai"
+	}
+	if c.MaxTCPPingValue == 0 {
+		c.MaxTCPPingValue = 1000
+	}
+	if c.AvgPingCount == 0 {
+		c.AvgPingCount = 2
+	}
+	if c.DDNS.Provider == "" {
+		c.DDNS.Provider = "webhook"
+	}
+	if c.DDNS.WebhookMethod == "" {
+		c.DDNS.WebhookMethod = "POST"
+	}
+	if c.DDNS.MaxRetries == 0 {
+		c.DDNS.MaxRetries = 3
 	}
 
 	c.updateIgnoredIPNotificationID()

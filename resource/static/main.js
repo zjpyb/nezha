@@ -302,6 +302,7 @@ function addOrEditServer(server, conf) {
   modal.find("input[name=id]").val(server ? server.ID : null);
   modal.find("input[name=name]").val(server ? server.Name : null);
   modal.find("input[name=Tag]").val(server ? server.Tag : null);
+  modal.find("input[name=DDNSDomain]").val(server ? server.DDNSDomain : null);
   modal
     .find("input[name=DisplayIndex]")
     .val(server ? server.DisplayIndex : null);
@@ -321,6 +322,11 @@ function addOrEditServer(server, conf) {
   } else {
     modal.find(".ui.hideforguest.checkbox").checkbox("set unchecked");
   }
+  if (server && server.EnableDDNS) {
+    modal.find(".ui.enableddns.checkbox").checkbox("set checked");
+  } else {
+    modal.find(".ui.enableddns.checkbox").checkbox("set unchecked");
+  }
   showFormModal(".server.modal", "#serverForm", "/api/server");
 }
 
@@ -339,6 +345,11 @@ function addOrEditMonitor(monitor) {
   modal.find("select[name=Type]").val(monitor ? monitor.Type : 1);
   modal.find("select[name=Cover]").val(monitor ? monitor.Cover : 0);
   modal.find("input[name=NotificationTag]").val(monitor ? monitor.NotificationTag : null);
+  if (monitor && monitor.EnableShowInService) {
+    modal.find(".ui.nb-show-in-service.checkbox").checkbox("set checked")
+  } else {
+    modal.find(".ui.nb-show-in-service.checkbox").checkbox("set unchecked")
+  }
   if (monitor && monitor.Notify) {
     modal.find(".ui.nb-notify.checkbox").checkbox("set checked");
   } else {

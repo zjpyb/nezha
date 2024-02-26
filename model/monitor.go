@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/naiba/nezha/pkg/utils"
-	pb "github.com/naiba/nezha/proto"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
+
+	"github.com/naiba/nezha/pkg/utils"
+	pb "github.com/naiba/nezha/proto"
 )
 
 const (
@@ -49,6 +50,7 @@ type Monitor struct {
 	Cover           uint8
 
 	EnableTriggerTask      bool     `gorm:"default: false"`
+	EnableShowInService    bool     `gorm:"default: false"`
 	FailTriggerTasksRaw    string   `gorm:"default:'[]'"`
 	RecoverTriggerTasksRaw string   `gorm:"default:'[]'"`
 	FailTriggerTasks       []uint64 `gorm:"-" json:"-"` // 失败时执行的触发任务id
